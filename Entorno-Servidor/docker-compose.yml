@@ -1,0 +1,19 @@
+services:
+  web:
+    container_name: dwes-web
+    image: php:8.4-apache
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+
+  db:
+    container_name: dwes-db
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: prueba
+    ports:
+      - "3306:3306"

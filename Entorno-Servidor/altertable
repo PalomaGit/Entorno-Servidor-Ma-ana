@@ -1,0 +1,147 @@
+--1. Creaci�n de la Base de Datos y la Tabla Original
+
+CREATE DATABASE Biblioteca;
+GO
+
+USE Biblioteca;
+
+
+CREATE TABLE LibrosOriginal
+(ISBN CHAR(10), 
+ NumeroCopias INT NOT NULL,
+ NombreEditorial VARCHAR(100) NOT NULL,
+ TituloLibro VARCHAR(255) NOT NULL,
+ CONSTRAINT pk_LibrosOriginal PRIMARY KEY(ISBN),
+ CONSTRAINT ch_Librosoriginal CHECK(LEN(ISBN)=10)
+);
+
+--Introducci�n de datos
+INSERT INTO LibrosOriginal (ISBN, NumeroCopias, NombreEditorial, TituloLibro)
+VALUES 
+    ('1234567890', 5, 'Editorial Planeta', 'El Quijote'),
+    ('0987654321', 3, 'Editorial Anaya', 'El Quijote'),
+    ('1122334455', 7, 'Editorial Alfaguara', 'Cien A�os de Soledad'),
+    ('5566778899', 4, 'Editorial Planeta', 'Cien A�os de Soledad'),
+    ('2233445566', 6, 'Editorial Santillana', 'Don Juan Tenorio'),
+    ('6677889900', 2, 'Editorial SM', 'Don Juan Tenorio'),
+    ('3344556677', 8, 'Editorial Planeta', '1984'),
+    ('7788990011', 5, 'Editorial Anaya', '1984'),
+    ('4455667788', 3, 'Editorial Santillana', 'El Principito'),
+    ('8899001122', 6, 'Editorial Alfaguara', 'El Principito');
+
+SELECT * FROM LibrosOriginal;
+
+/*2. Hacemos y probamos todas las operaciones necesarias para normalizar la 
+base de datos sin perder la informaci�n almacenada.*/
+
+--Creaci�n tabla editorial carg�ndola con las editoriales almacenadas 
+SELECT DISTINCT NombreEditorial INTO editorial
+FROM LibrosOriginal;
+
+SELECT * FROM editorial;
+
+--A�adimos una columna que sea PK
+ALTER TABLE editorial
+ADD CodEdi INT IDENTITY PRIMARY KEY;
+
+SELECT * FROM editorial;
+SELECT * FROM LibrosOriginal;
+
+--Creaci�n tabla titulo carg�ndola con los t�tulos almacenados 
+SELECT DISTINCT TituloLibro INTO titulo
+FROM LibrosOriginal;
+
+--A�adimos una columna que sea PK
+ALTER TABLE titulo
+ADD CodTit INT IDENTITY PRIMARY KEY;
+
+SELECT * FROM titulo;
+SELECT * FROM LibrosOriginal;
+
+--A�adimos dos columnas con restricci�n FK a la tabla de libros original
+ALTER TABLE LibrosOriginal
+ADD CodEdi INT FOREIGN KEY REFERENCES editorial(CodEdi),
+    CodTit INT FOREIGN KEY REFERENCES titulo(CodTit);
+
+/*Actualizamos la tabla LibrosOriginal poniendo en las columnas
+CodEdi y CodTit los valores correctos.*/
+BEGIN TRANSACTION;
+
+UPDATE LibrosOriginal
+SET CodEdi = (SELECT CodEdi FROM editorial WHERE NombreEditorial = LibrosOriginal.NombreEditorial),
+    CodTit = (SELECT CodTit FROM titulo WHERE TituloLibro = LibrosOriginal.TituloLibro);
+
+ROLLBACK TRANSACTION;
+
+--Tambi�n se podr�a haber hecho con JOIN.
+SELECT *
+FROM LibrosOriginal l JOIN editorial e ON (l.NombreEditorial=e.NombreEditorial);
+
+SELECT *
+FROM (LibrosOriginal l JOIN editorial e ON (l.NombreEditorial=e.NombreEditorial))
+      JOIN titulo t ON (l.TituloLibro=t.TituloLibro);
+
+UPDATE LibrosOriginal
+SET CodEdi= e.CodEdi, CodTit=t.CodTit
+FROM (LibrosOriginal l JOIN editorial e ON (l.NombreEditorial=e.NombreEditorial))
+      JOIN titulo t ON (l.TituloLibro=t.TituloLibro);
+
+--Borramos las columnas NombreEditorial y TituloLibro de la tabla de libros original
+ALTER TABLE LibrosOriginal
+DROP COLUMN NombreEditorial, TituloLibro;
+
+--Borramos la restricci�n de PK de campo ISBN
+ALTER TABLE LibrosOriginal
+DROP CONSTRAINT pk_LibrosOriginal;
+
+--A�adimos la columna CodLib a la tabla de libros original para que sea PK
+ALTER TABLE LibrosOriginal
+ADD CodLib INT NOT NULL IDENTITY CONSTRAINT pk_LibrosOriginal PRIMARY KEY; 
+
+SELECT * FROM LibrosOriginal;
+SELECT * FROM titulo;
+SELECT * FROM editorial;
+
+--Borramos la restricci�n que ten�a la columna ISBN
+ALTER TABLE LibrosOriginal
+DROP CONSTRAINT ch_Librosoriginal;
+
+--Modificamos el tipo de datos del ISBN para que admita 13 d�gitos
+ALTER TABLE LibrosOriginal
+ALTER COLUMN ISBN VARCHAR(13);
+
+--A�adimos las nuevas restricciones.
+ALTER TABLE LibrosOriginal
+ADD CONSTRAINT check_Librosoriginal CHECK(LEN(ISBN)=10 OR LEN(ISBN)=13),
+    CONSTRAINT unique_Librosoriginal UNIQUE (ISBN);
+
+SELECT * FROM LibrosOriginal;
+SELECT * FROM titulo;
+SELECT * FROM editorial;
+
+--Probamos que funcione la restricci�n del ISBN
+INSERT INTO titulo
+VALUES ('El Hobbit');
+
+--ISBN de 10 d�gitos
+INSERT INTO LibrosOriginal (ISBN, NumeroCopias, CodEdi, CodTit)
+VALUES ('9781234567', 1, 3, 6);
+
+--ISBN de 13 d�gitos
+INSERT INTO LibrosOriginal (ISBN, NumeroCopias, CodEdi, CodTit)
+VALUES ('9781234567890', 1, 3, 6);
+
+--No permite ISBN repetido
+INSERT INTO LibrosOriginal (ISBN, NumeroCopias, CodEdi, CodTit)
+VALUES ('9781234567890', 1, 3, 6);
+
+--No permite ISBN de una longitud distinta a 10 o 13 d�gitos. Probamos con 12
+INSERT INTO LibrosOriginal (ISBN, NumeroCopias, CodEdi, CodTit)
+VALUES ('978123456789', 1, 3, 6);
+
+--Cambiamos el nombre a la tabla LibrosOriginal
+EXEC sp_rename 'LibrosOriginal', 'libro';
+
+SELECT * FROM libro;
+SELECT * FROM titulo;
+SELECT * FROM editorial;
