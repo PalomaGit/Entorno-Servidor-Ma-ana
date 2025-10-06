@@ -9,17 +9,16 @@
 
     <form action="" method="post">
         <label for="numeros">Introduce números positivos separados por comas:</label><br>
-        <input type="text" name="numeros" id="numeros" size="50"
-               placeholder="ej: 5,10,3,8,12" required>
+        <input type="number" name="numeros" required>
         <br><br>
         <button type="submit">Calcular media</button>
     </form>
 
     <?php
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["numeros"])) {
-        $input = $_POST["numeros"];
-        // Dividir por comas
-        $partes = explode(",", $input);
+        $numeros = $_POST["numeros"];
+
+        $partes = explode(",", $numeros);
 
         $suma = 0;
         $contador = 0;
@@ -39,7 +38,7 @@
             echo "<p>Suma: $suma</p>";
             echo "<p>Media: " . number_format($media, 2) . "</p>";
         } else {
-            echo "<p>No se introdujo ningún número válido para calcular la media.</p>";
+            echo "<p>El número no es válido.</p>";
         }
 
        
