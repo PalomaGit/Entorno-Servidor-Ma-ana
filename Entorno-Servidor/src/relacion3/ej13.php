@@ -17,15 +17,17 @@
     </form>
     <?php
     if (isset($_POST["x"])) {
-        $x = $_POST["x"];
-        echo "<table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse;'>";
-        foreach ($x as $indice => $numero) {
-            
-            echo "<th>$indice</th>";
-            echo "<tr><td>" . $numero . "</td></tr>";
-            
+         $x = $_POST["x"];
+        echo "<table cellpadding='15' style='border-collapse: collapse;'>";
+        echo "<tr>";
+        foreach (array_keys($x) as $indice) {
+            echo "<th style='border-bottom: 1px solid grey'>$indice</th>";
         }
-        echo "</table>";
+        echo "</tr><tr>";
+        foreach ($x as $numero) {
+            echo "<td>$numero</td>";
+        }
+        echo "</tr></table>";
     }
     ?>
 </body>
